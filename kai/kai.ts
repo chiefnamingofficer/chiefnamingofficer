@@ -1,4 +1,4 @@
-import json
+       import json
 import boto3
 import urllib3
 import os
@@ -15,17 +15,20 @@ slackToken = os.environ.get('token')
 
 http = urllib3.PoolManager()
 
+
+
 # Dictionary to maintain conversation history per channel
 conversation_history = {}
 
 def call_bedrock(conversation):
     body = json.dumps({
-        "inputText": conversation,
+        "prompt": conversation,
         "maxTokens": 5000,
         "temperature": 0.5,
         "topP": 1,
     })
-
+    #models with access ai21.j2-ultra-v1,ai21.j2-mid-v1,ai21.jamba-instruct-v1:0,meta.llama3-70b-instruct-v1:0,amazon.titan-text-premier-v1:0
+    #all have slightly different parameter needs - https://us-east-1.console.aws.amazon.com/bedrock/home?region=us-east-1#/models
     modelId = 'ai21.j2-ultra-v1'
     accept = 'application/json'
     contentType = 'application/json'
@@ -46,26 +49,31 @@ def call_bedrock(conversation):
         return "Sorry, I couldn't process your request at the moment."
 
 def lambda_handler(event, context):
+
     slackBody = json.loads(event['body'])
     slackText = slackBody.get('event').get('text')
     slackUser = slackBody.get('event').get('user')
     channel = slackBody.get('event').get('channel')
     thread_ts = slackBody.get('event').get('ts')  # Get the thread timestamp
+       
+    
+    # Unique key for each thread
+    thread_key = f"{channel}-{thread_ts}"
 
-    # Initialize conversation history for the channel if not already present
-    if channel not in conversation_history:
-        conversation_history[channel] = []
+    # Initialize conversation history for the thread if not already present
+    if thread_key not in conversation_history:
+        conversation_history[thread_key] = []
 
     # Add the new message to the conversation history
-    conversation_history[thread_ts].append(f"Human: {slackText.replace('<@U06D5B8AR8R>', '')}")
+    conversation_history[thread_key].append(f"Human: {slackText.replace('<@U06D5B8AR8R>', '')}")
 
     # Formulate the conversation context
-    conversation_context = "\n\n".join(conversation_history[thread_ts]) + "\n\nAssistant:"
+    conversation_context = "\n\n".join(conversation_history[thread_key]) + "\n\nAssistant:"
 
     msg = call_bedrock(conversation_context)
     
     # Add the assistant's response to the conversation history
-    conversation_history[thread_ts].append(f"Assistant: {msg}")
+    conversation_history[thread_key].append(f"Assistant: {msg}")
 
     # Log the values
     logger.info(f"Slack Text: {slackText}")
