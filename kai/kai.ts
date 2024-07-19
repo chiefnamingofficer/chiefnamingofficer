@@ -1,4 +1,4 @@
-       import json
+import json
 import boto3
 import urllib3
 import os
@@ -20,33 +20,84 @@ http = urllib3.PoolManager()
 # Dictionary to maintain conversation history per channel
 conversation_history = {}
 
-def call_bedrock(conversation):
+def call_bedrock(input_text):
     body = json.dumps({
-        "prompt": conversation,
-        "maxTokens": 5000,
-        "temperature": 0.5,
-        "topP": 1,
+        "inputText": input_text,
+        "textGenerationConfig": {
+            "maxTokenCount": 3072,
+            "stopSequences": [],
+            "temperature": 0.7,
+            "topP": 0.9
+        }
     })
-    #models with access ai21.j2-ultra-v1,ai21.j2-mid-v1,ai21.jamba-instruct-v1:0,meta.llama3-70b-instruct-v1:0,amazon.titan-text-premier-v1:0
-    #all have slightly different parameter needs - https://us-east-1.console.aws.amazon.com/bedrock/home?region=us-east-1#/models
-    modelId = 'ai21.j2-ultra-v1'
+    modelId = 'amazon.titan-text-premier-v1:0'
     accept = 'application/json'
     contentType = 'application/json'
 
     try:
         response = bedrock.invoke_model(body=body, modelId=modelId, accept=accept, contentType=contentType)
         
+        if response is None:
+            logger.error("Response from Bedrock model is None.")
+            return "Sorry, I couldn't process your request at the moment."
+
         if isinstance(response.get('body'), StreamingBody):
             response_content = response['body'].read().decode('utf-8')
         else:
             response_content = response.get('body')
 
-        response_body = json.loads(response_content)
+        if response_content is None:
+            logger.error("Response content is None.")
+            return "Sorry, I couldn't process your request at the moment."
 
-        return response_body.get('completions')[0].get('data').get('text')
+        response_body = json.loads(response_content)
+        
+        logger.debug(f"Response body content: {response_body}")
+
+        if response_body is None:
+            logger.error("Response body is None.")
+            return "Sorry, I couldn't process your request at the moment."
+
+        # Adjusted to reflect the actual response structure
+        results = response_body.get('results')
+        if results and len(results) > 0:
+            return results[0].get('outputText', "No text found in results.")
+        else:
+            logger.error("No results found in the response body.")
+            return "Sorry, I couldn't process your request at the moment."
+
     except Exception as e:
         logger.error(f"Error calling Bedrock model: {e}")
-        return "Sorry, I couldn't process your request at the moment."
+
+    return "Sorry, I couldn't process your request at the moment."
+
+# def call_bedrock(conversation):
+#     body = json.dumps({
+#         "prompt": conversation,
+#         "maxTokens": 5000,
+#         "temperature": 0.5,
+#         "topP": 1,
+#     })
+#     #models with access ai21.j2-ultra-v1,ai21.j2-mid-v1,ai21.jamba-instruct-v1:0,meta.llama3-70b-instruct-v1:0,amazon.titan-text-premier-v1:0
+#     #all have slightly different parameter needs - https://us-east-1.console.aws.amazon.com/bedrock/home?region=us-east-1#/models
+#     modelId = 'ai21.j2-ultra-v1'
+#     accept = 'application/json'
+#     contentType = 'application/json'
+
+#     try:
+#         response = bedrock.invoke_model(body=body, modelId=modelId, accept=accept, contentType=contentType)
+        
+#         if isinstance(response.get('body'), StreamingBody):
+#             response_content = response['body'].read().decode('utf-8')
+#         else:
+#             response_content = response.get('body')
+
+#         response_body = json.loads(response_content)
+
+#         return response_body.get('completions')[0].get('data').get('text')
+#     except Exception as e:
+#         logger.error(f"Error calling Bedrock model: {e}")
+#         return "Sorry, I couldn't process your request at the moment."
 
 def lambda_handler(event, context):
 
