@@ -17,6 +17,8 @@ table = dynamodb.Table('playground-poc-kai-preserve-conversation-context')
 # lets not us static thread id for all conversations - id = "123e4567-e89b-12d3-a456-426614174000"
 slackUrl = 'https://slack.com/api/chat.postMessage'
 SlackChatHistoryUrl = 'https://slack.com/api/conversations.replies'
+SlackLeaveChannelUrl = 'https://slack.com/api/conversations.leave'
+slackBotUserId = 'U07CN2G5807'
 slackToken = os.environ.get('token')
 
 http = urllib3.PoolManager()
@@ -125,6 +127,22 @@ def is_bot_mentioned(slackText, bot_user_id):
     mention_pattern = f"<@{bot_user_id}>"
     return mention_pattern in slackText
 
+# Function which allows for Kai to leave any channel it was integrated with
+def leave_channel(token, channel_id):
+    
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json"
+    }
+    data = {"channel": channel_id}
+    
+    response = http.request('POST', SlackLeaveChannelUrl, headers=headers, body=json.dumps(data))
+    
+    if response.status == 200 and json.loads(response.data).get('ok'):
+        logger.info(f"Successfully left channel: {channel_id}")
+    else:
+        logger.error(f"Failed to leave channel: {channel_id}, Error: {response.data.decode('utf-8')}")
+
 # new handler with DB conversation history
 def lambda_handler(event, context):
     headers = {
@@ -156,6 +174,15 @@ def lambda_handler(event, context):
         thread_key = f"{channel}-{thread_ts}"
 
     if eventType == 'message' and bot_id is None and subtype is None:
+        # Check if the message mentions the bot and contains a leave command
+        if is_bot_mentioned(slackText, slackBotUserId):
+            command = re.sub(f"<@{slackBotUserId}>", "", slackText).strip().lower()
+            if command.startswith("leave channel"):
+                leave_channel(slackToken, channel)
+                return {
+                    'statusCode': 200,
+                    'body': json.dumps({'msg': "Leaving the channel"})
+                }
         #checking if new message or previously stored message , if true process new message 
         if get_message(thread_key) != hash_message(slackText):
             set_message(thread_key, slackText)
