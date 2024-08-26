@@ -96,19 +96,6 @@ def call_bedrock(input_text):
 #     try:
 #         response = bedrock.invoke_model(body=body, modelId=modelId, accept=accept, contentType=contentType)
 
-#         if isinstance(response.get('body'), StreamingBody):
-#             response_content = response['body'].read().decode('utf-8')
-#         else:
-#             response_content = response.get('body')
-
-#         response_body = json.loads(response_content)
-
-#         return response_body.get('completions')[0].get('data').get('text')
-#     except Exception as e:
-#         logger.error(f"Error calling Bedrock model: {e}")
-#         return "Sorry, I couldn't process your request at the moment."
-
-#   new part 
 def hash_message(message):
     msg_bytes = message.encode('utf-8')
     sha1 = hashlib.sha1(msg_bytes)
@@ -131,7 +118,12 @@ def set_message(thread_key,message):
         UpdateExpression="SET message = :value",
         ExpressionAttributeValues={':value': hash_message(message)}
     )
-# new part end
+
+# Function to check if the bot is mentioned in the message
+def is_bot_mentioned(slackText, bot_user_id):
+
+    mention_pattern = f"<@{bot_user_id}>"
+    return mention_pattern in slackText
 
 # new handler with DB conversation history
 def lambda_handler(event, context):
@@ -140,113 +132,119 @@ def lambda_handler(event, context):
         'Content-Type': 'application/json',
     }
     slackBody = json.loads(event['body'])
-    print(json.dumps(slackBody))
+    logger.info(f"Response body content: {slackBody}")
     slackText = slackBody.get('event').get('text')
     slackUser = slackBody.get('event').get('user')
     channel =  slackBody.get('event').get('channel')
     thread_ts = slackBody.get('event').get('thread_ts')
     ts = slackBody.get('event').get('ts')
+    #evenType could be a message or a reaction
     eventType = slackBody.get('event').get('type')
+    #subtype is more info about evenType i.e. if eventType is message then subType could be bot_message, file_share 
     subtype = slackBody.get('event').get('subtype')
     bot_id = slackBody.get('event').get('bot_id')
     is_last_message_from_bot = False
     bedrockMsg = []
     
-    # Unique key for each thread
-    thread_key = f"{channel}-{thread_ts}"
-    
-    if eventType == 'message' and bot_id is None and subtype is None and thread_ts is not None:
+    # Determine if this is a direct message (DM)
+    is_direct_message = channel.startswith('D')
+
+    # Unique key for each conversation
+    if is_direct_message:
+        thread_key = f"{channel}-{ts}"  # Use ts for unique key in DMs
+    else:
+        thread_key = f"{channel}-{thread_ts}"
+
+    if eventType == 'message' and bot_id is None and subtype is None:
+        #checking if new message or previously stored message , if true process new message 
         if get_message(thread_key) != hash_message(slackText):
-            set_message(thread_key,slackText)
-            # We got a new message in the thread lets pull from history
-            historyResp = http.request('GET', f"{SlackChatHistoryUrl}?channel={channel}&ts={thread_ts}", headers=headers)
-            response_data = historyResp.data.decode('utf-8')  # Decode the byte string to a UTF-8 string
-            messages = json.loads(response_data).get('messages')  # Parse the string as JSON
-            
-            for message in messages:
-                cleanMsg = re.sub(r'<@.*?>', '', message.get('text'))
-                bot_profile = message.get('bot_profile')
-                if bot_profile is None:
-                    bedrockMsg.append(f'Human: {cleanMsg}')
-                    is_last_message_from_bot = False
-                else:
-                    bedrockMsg.append(f'\n\nAssistant: {cleanMsg}')
-                    is_last_message_from_bot = True
-            bedrockMsg.append('\n\nAssistant:') # Message must always end with \n\nAssistant:
- 
-            if not is_last_message_from_bot: # Do not respond if the last message was a response
+            set_message(thread_key, slackText)
+            if is_direct_message:
+                # Handle Direct Messages (DMs)
+                #store message context , human question/statement following by 2 line breaks and the beginning of the response from bedrock llm prefaced by Assistant
+                bedrockMsg = [f'Human: {slackText}\n\nAssistant:']
                 msg = call_bedrock(bedrockMsg)
-                data = {'channel': channel, 'text': f"<@{slackUser}> {msg}", 'thread_ts': thread_ts}
+                data = {'channel': channel, 'text': msg}
                 response = http.request('POST', slackUrl, headers=headers, body=json.dumps(data))
-        
-    if (eventType == 'app_mention' and bot_id is None and thread_ts is None):
-        # send an init message and thread the convo
+            else:
+                # Handle messages in threads within channels
+                historyResp = http.request('GET', f"{SlackChatHistoryUrl}?channel={channel}&ts={thread_ts}", headers=headers)
+                response_data = historyResp.data.decode('utf-8')
+                messages = json.loads(response_data).get('messages')
+
+                bedrockMsg = []
+                is_last_message_from_bot = False
+
+                #I think this loop is flawed - why loop through all messages everytime the handler is invoked?
+                #All that is really needed is to look at the last message, check if it was a human or kai 
+                #If is what Kai , ignore 
+                #If it was a human, it needs to contain @kai , otherwise ignore 
+
+                for message in messages:
+                    # Check if the bot is mentioned in the message
+                    if is_bot_mentioned(message.get('text'), bot_id):
+                        #remove slack user from message 
+                        cleanMsg = re.sub(f"<@{bot_id}>", '', message.get('text')).strip()
+                        bot_profile = message.get('bot_profile')
+                        if bot_profile is None:
+                            bedrockMsg.append(f'Human: {cleanMsg}')
+                            is_last_message_from_bot = False
+                        else:
+                            bedrockMsg.append(f'\n\nAssistant: {cleanMsg}')
+                            is_last_message_from_bot = True
+                
+                if not is_last_message_from_bot:
+                    bedrockMsg.append('\n\nAssistant:')
+                    msg = call_bedrock(bedrockMsg)
+                    data = {'channel': channel, 'text': f"<@{slackUser}> {msg}", 'thread_ts': thread_ts}
+                    response = http.request('POST', slackUrl, headers=headers, body=json.dumps(data))
+
+    elif eventType == 'app_mention' and bot_id is None and thread_ts is None:
+        # Handle direct mentions in channels (no thread)
         initMsg = re.sub(r'<@.*?>', '', slackText)
-        bedrockMsg.append(f'Human: {initMsg} \n\nAssistant:')
+        bedrockMsg = [f'Human: {initMsg} \n\nAssistant:']
         msg = call_bedrock(bedrockMsg)
         data = {'channel': channel, 'text': f"<@{slackUser}> {msg}", 'thread_ts': ts}
         response = http.request('POST', slackUrl, headers=headers, body=json.dumps(data))
-    
+
     return {
         'statusCode': 200,
         'body': json.dumps({'msg': "message received"})
     }
 
-# def lambda_handler(event, context):
-
-#     logger.info("Received event: %s", json.dumps(event, indent=2))
-#     slackBody = json.loads(event['body'])
-#     slackText = slackBody.get('event').get('text')
-#     slackUser = slackBody.get('event').get('user')
-#     channel = slackBody.get('event').get('channel')
-#     thread_ts = slackBody.get('event').get('ts')  # Get the thread timestamp
-
-
-#     # Unique key for each thread
-#     thread_key = f"{channel}-{thread_ts}"
-
-#     # Initialize conversation history for the thread if not already present
-#     if thread_key not in conversation_history:
-#         conversation_history[thread_key] = []
-
-#     # Add the new message to the conversation history
-#     conversation_history[thread_key].append(f"Human: {slackText.replace('<@U06D5B8AR8R>', '')}")
-
-#     # Formulate the conversation context
-#     conversation_context = "\n\n".join(conversation_history[thread_key]) + "\n\nAssistant:"
-
-#     msg = call_bedrock(conversation_context)
-
-#     # Add the assistant's response to the conversation history
-#     conversation_history[thread_key].append(f"Assistant: {msg}")
-
-#     # Log the values
-#     logger.info(f"Slack Text: {slackText}")
-#     logger.info(f"Slack User: {slackUser}")
-#     logger.info(f"Channel: {channel}")
-#     logger.info(f"Thread TS: {thread_ts}")
-#     logger.info(f"Message: {msg}")
-
-#     data = {
-#         'channel': channel,
-#         'text': f"<@{slackUser}> {msg}",
-#         'thread_ts': thread_ts  # Include the thread timestamp
-#     }
-
-#     headers = {
-#         'Authorization': f'Bearer {slackToken}',
-#         'Content-Type': 'application/json',
-#     }
-
-#     try:
-#         response = http.request('POST', slackUrl, headers=headers, body=json.dumps(data))
-#         # Log the response from Slack
-#         logger.info(f"Slack Response: {response.data.decode('utf-8')}")
-#     except Exception as e:
-#         logger.error(f"Error sending message to Slack: {e}")
-
-#     return {
-#         'statusCode': 200,
-#         'body': json.dumps({'msg': "message received"})
-#     }
-
+    // if eventType == 'message' and bot_id is None and subtype is None and thread_ts is not None:
+    //     if get_message(thread_key) != hash_message(slackText):
+    //         set_message(thread_key,slackText)
+    //         # We got a new message in the thread lets pull from history
+    //         historyResp = http.request('GET', f"{SlackChatHistoryUrl}?channel={channel}&ts={thread_ts}", headers=headers)
+    //         response_data = historyResp.data.decode('utf-8')  # Decode the byte string to a UTF-8 string
+    //         messages = json.loads(response_data).get('messages')  # Parse the string as JSON
+            
+    //         for message in messages:
+    //             cleanMsg = re.sub(r'<@.*?>', '', message.get('text'))
+    //             bot_profile = message.get('bot_profile')
+    //             if bot_profile is None:
+    //                 bedrockMsg.append(f'Human: {cleanMsg}')
+    //                 is_last_message_from_bot = False
+    //             else:
+    //                 bedrockMsg.append(f'\n\nAssistant: {cleanMsg}')
+    //                 is_last_message_from_bot = True
+    //         bedrockMsg.append('\n\nAssistant:') # Message must always end with \n\nAssistant:
+ 
+    //         if not is_last_message_from_bot: # Do not respond if the last message was a response
+    //             msg = call_bedrock(bedrockMsg)
+    //             data = {'channel': channel, 'text': f"<@{slackUser}> {msg}", 'thread_ts': thread_ts}
+    //             response = http.request('POST', slackUrl, headers=headers, body=json.dumps(data))
+        
+    // if (eventType == 'app_mention' and bot_id is None and thread_ts is None):
+    //     # send an init message and thread the convo
+    //     initMsg = re.sub(r'<@.*?>', '', slackText)
+    //     bedrockMsg.append(f'Human: {initMsg} \n\nAssistant:')
+    //     msg = call_bedrock(bedrockMsg)
+    //     data = {'channel': channel, 'text': f"<@{slackUser}> {msg}", 'thread_ts': ts}
+    //     response = http.request('POST', slackUrl, headers=headers, body=json.dumps(data))
+    
+    // return {
+    //     'statusCode': 200,
+    //     'body': json.dumps({'msg': "message received"})
+    // }
