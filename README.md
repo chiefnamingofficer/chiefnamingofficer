@@ -16,7 +16,7 @@ Describes how I prefer to work (e.g., independently, collaboratively in teams, e
 
 Specifies my typical work hours or the times when I am most productive.
 
-😄 10AM - 6PM. I have several blocks of focus time during these hrs that you cannot book.
+😄 9AM - 5PM. I have several blocks of focus time during these hrs that you cannot book.
 
 ### Preferred Way to Meet
 
