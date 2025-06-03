@@ -1,0 +1,20 @@
+{
+  "name": "talk-events-to-me",
+  "version": "1.0.0",
+  "description": "A learning project for EventCatalog MCP integration",
+  "main": "index.js",
+  "scripts": {
+    "test-mcp": "npx -y @eventcatalog/mcp-server --help",
+    "check-eventcatalog": "curl -I https://eventcatalog.compassdigital.org/"
+  },
+  "keywords": [
+    "eventcatalog",
+    "mcp",
+    "event-driven-architecture",
+    "learning"
+  ],
+  "author": "Sebastian Vietz",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {}
+} 

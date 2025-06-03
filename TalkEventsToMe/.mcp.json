@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "eventcatalog": {
+      "command": "npx",
+      "args": [
+        "-y", 
+        "@eventcatalog/mcp-server", 
+        "https://eventcatalog.compassdigital.org/",
+        "YOUR_EVENTCATALOG_SCALE_LICENSE_KEY"
+      ]
+    }
+  }
+} 
