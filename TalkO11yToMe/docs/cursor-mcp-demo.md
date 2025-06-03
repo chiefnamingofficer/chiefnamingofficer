@@ -13,7 +13,7 @@ Since the official MCP server requires complex OAuth setup, let's use **Cursor's
 ```
 I need you to help me analyze my Dynatrace environment. Please run this command and explain the results:
 
-node tools/dynatrace-query.js
+node tools/classic-api-client.js
 
 Then categorize the problems by severity and suggest which ones need immediate attention.
 ```
