@@ -28,6 +28,7 @@ Welcome to your MCP (Model Context Protocol) learning journey! This project will
 - **🚀 [Tools Guide](docs/TOOLS_GUIDE.md)** - Complete tool documentation and usage examples
 - **🔧 [Technical Solution](docs/DYNATRACE_LOGS_SOLUTION.md)** - Detailed environment setup and troubleshooting
 - **🎯 [AI Integration Demo](docs/cursor-mcp-demo.md)** - Step-by-step AI analysis examples
+- **⚡ [Cursor IDE Integration](docs/CURSOR_INTEGRATION.md)** - Practical workflows and AI-powered development patterns
 
 ### **Key Sections**
 1. [What is MCP?](#what-is-mcp)
@@ -202,6 +203,7 @@ node tools/classic-api-client.js lambda-problems now-24h
 - **[Complete Tools Guide](docs/TOOLS_GUIDE.md)** - All tools with examples and best practices
 - **[Technical Implementation](docs/DYNATRACE_LOGS_SOLUTION.md)** - Environment setup, troubleshooting, and architecture details  
 - **[AI Integration Examples](docs/cursor-mcp-demo.md)** - Step-by-step AI analysis workflows
+- **[Cursor IDE Integration](docs/CURSOR_INTEGRATION.md)** - Development workflows and practical AI patterns
 
 ---
 
