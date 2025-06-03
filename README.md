@@ -4,6 +4,19 @@
 
 This repository contains my Personal API, which outlines my preferred ways of working, communication styles, and expectations for collaboration. This document serves as a user manual for teammates and collaborators to understand how to engage with me effectively.
 
+## My Projects
+
+Here are some of my current projects:
+
+### 🤖 [kai](https://github.com/chiefnamingofficer/kai)
+My personal AI assistant project with TypeScript implementation.
+
+### 📊 [TalkO11yToMe](https://github.com/chiefnamingofficer/TalkO11yToMe)
+Dynatrace MCP Toolkit - A comprehensive observability solution with universal Grail/Classic support, featuring 5 working tools, environment auto-detection, and OAuth integration.
+
+### 📡 [TalkEventsToMe](https://github.com/chiefnamingofficer/TalkEventsToMe)
+EventCatalog MCP Learning Project - Focused on integrating with EventCatalog via MCP server to explore event-driven architecture questions and insights.
+
 ## Personal API
 
 ### Preferred Way of Working
