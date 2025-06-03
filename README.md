@@ -55,7 +55,7 @@ States the minimum amount of information or context I expect others to provide w
 
 States whether I prefer public (group) conversations or private (one-on-one) discussions.
 
-😄 I prefer public conversations for transparency and as I see every conversation as a learning and sharing opportunity. 
+😄 I prefer public conversations for transparency and as I see every conversation as a learning and sharing opportunity.
 
 ### Openness to Regular 1-1s
 
