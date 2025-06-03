@@ -8,13 +8,16 @@ This repository contains my Personal API, which outlines my preferred ways of wo
 
 Here are some of my current projects:
 
-### 🤖 [kai](https://github.com/chiefnamingofficer/kai)
+### 🤖 kai
+
 My personal AI assistant project with TypeScript implementation.
 
-### 📊 [TalkO11yToMe](https://github.com/chiefnamingofficer/TalkO11yToMe)
+### 📊 TalkO11yToMe
+
 Dynatrace MCP Toolkit - A comprehensive observability solution with universal Grail/Classic support, featuring 5 working tools, environment auto-detection, and OAuth integration.
 
-### 📡 [TalkEventsToMe](https://github.com/chiefnamingofficer/TalkEventsToMe)
+### 📡 TalkEventsToMe
+
 EventCatalog MCP Learning Project - Focused on integrating with EventCatalog via MCP server to explore event-driven architecture questions and insights.
 
 ## Personal API
@@ -23,7 +26,7 @@ EventCatalog MCP Learning Project - Focused on integrating with EventCatalog via
 
 Describes how I prefer to work (e.g., independently, collaboratively in teams, etc.).
 
-😄 Remotely. In the office once per week, usually on Tuesdays. 
+😄 Remotely. In the office once per week, usually on Tuesdays.
 
 ### Preferred Working Hours
 
@@ -35,8 +38,7 @@ Specifies my typical work hours or the times when I am most productive.
 
 Indicates my preferred methods of communication and meeting (e.g., email, chat, video calls, in-person).
 
-😄 I love Slack.
-😄 I hate emails.
+😄 I love Slack. 😄 I hate emails.
 
 😄 I am ok with async conversations in Slack. I usually get to all conversations, topics and threads before the end of each work day.
 
@@ -54,7 +56,7 @@ Specifies times when I am most open to interruptions or quick questions.
 
 Describes how interruptions should be managed (e.g., urgent matters via phone, non-urgent via email).
 
-😄 I will take them as they come. 
+😄 I will take them as they come.
 
 😄 I prefer Slack. Tag me. Approach me via #pod-sre or if necessary via DM. Escalate via DM in Slack and if its super urgent use Pagerduty.
 
@@ -74,7 +76,7 @@ States whether I prefer public (group) conversations or private (one-on-one) dis
 
 Indicates if I am open to regular one-on-one meetings and how often (e.g., weekly, bi-weekly).
 
-😄 I am open. How regularly we meet will depend on a few factors we can discuss. 
+😄 I am open. How regularly we meet will depend on a few factors we can discuss.
 
 ## Usage
 
