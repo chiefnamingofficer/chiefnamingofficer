@@ -22,13 +22,19 @@ Welcome to your MCP (Model Context Protocol) learning journey! This project will
 
 **📖 See [Environment Detection Guide](#environment-detection) below for setup details.**
 
-## 📚 Table of Contents
+## 📚 Documentation
 
+### **Quick Reference**
+- **🚀 [Tools Guide](docs/TOOLS_GUIDE.md)** - Complete tool documentation and usage examples
+- **🔧 [Technical Solution](docs/DYNATRACE_LOGS_SOLUTION.md)** - Detailed environment setup and troubleshooting
+- **🎯 [AI Integration Demo](docs/cursor-mcp-demo.md)** - Step-by-step AI analysis examples
+
+### **Key Sections**
 1. [What is MCP?](#what-is-mcp)
 2. [Understanding MCP Architecture](#understanding-mcp-architecture)
 3. [Dynatrace MCP Server](#dynatrace-mcp-server)
 4. [Setup Instructions](#setup-instructions)
-5. [Working Tools](#working-tools)
+5. [Environment Detection](#environment-detection)
 6. [Quick Start Demo](#quick-start-demo)
 7. [Real-World Use Cases](#real-world-use-cases)
 8. [Resources](#resources)
@@ -111,10 +117,92 @@ OAUTH_CLIENT_SECRET=dt0s02.XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.YYYYYYYYYYYYYYYYYYYY
 OAUTH_RESOURCE_URN=urn:dynatrace:environment:your-environment-id
 ```
 
-## 🔧 Working Tools
+## 🔍 Environment Detection
 
-This project includes several working tools for Dynatrace integration:
+Check your Dynatrace URL to determine your environment type:
 
-### 🎯 **For Grail Environments** (`*.apps.dynatrace.com`)
+### **Grail Environment Detection**
+```bash
+https://xxx.apps.dynatrace.com  ← Contains ".apps."
+```
+**→ Use:** `grail-log-query.js` (OAuth required)
 
-#### 🚀 **Primary Tool**: `
+### **Classic Environment Detection**  
+```bash
+https://xxx.live.dynatrace.com  ← Contains ".live."
+```
+**→ Use:** `classic-log-query.js` (API token supported)
+
+## 🎯 Quick Start Demo
+
+### **For Grail Environments:**
+```bash
+# Run primary tool for modern Dynatrace platforms
+node tools/grail-log-query.js "error" now-2h
+
+# Visual monitoring dashboard
+node tools/dynatrace-monitor.js
+```
+
+### **For Classic Environments:**
+```bash
+# Run primary tool for legacy Dynatrace platforms
+node tools/classic-log-query.js search "error" now-2h
+
+# Comprehensive API client
+node tools/classic-api-client.js problems 10
+
+# Visual monitoring dashboard
+node tools/dynatrace-monitor.js
+```
+
+**📖 For detailed tool usage, see [Tools Guide](docs/TOOLS_GUIDE.md)**.
+
+## 🎯 Real-World Use Cases
+
+### 1. **AI-Powered Incident Response**
+Use the [AI Integration Demo](docs/cursor-mcp-demo.md) to:
+- Analyze Lambda function errors automatically
+- Generate incident response priorities
+- Create security assessments
+- Design monitoring dashboards
+
+### 2. **Production Debugging Context**
+```bash
+# Get context for coding session
+node tools/dynatrace-monitor.js
+
+# Search for specific errors
+node tools/grail-log-query.js "timeout" now-1h
+```
+
+### 3. **Daily Health Monitoring**
+```bash
+# Morning standup dashboard
+node tools/dynatrace-monitor.js
+
+# Lambda function health check
+node tools/classic-api-client.js lambda-problems now-24h
+```
+
+## 📚 Resources
+
+### **Official MCP Resources:**
+- [MCP Specification](https://modelcontextprotocol.io/specification)
+- [Anthropic MCP Documentation](https://docs.anthropic.com/en/docs/mcp/introduction)
+- [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)
+- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+
+### **Dynatrace MCP Integration:**
+- [Official Dynatrace MCP Server](https://github.com/dynatrace-extensions/mcp-server-dynatrace) (Classic environments only)
+- [Dynatrace API Documentation](https://docs.dynatrace.com/docs/dynatrace-api)
+- [Dynatrace DQL Documentation](https://docs.dynatrace.com/docs/platform/grail/dynatrace-query-language)
+
+### **Project Documentation:**
+- **[Complete Tools Guide](docs/TOOLS_GUIDE.md)** - All tools with examples and best practices
+- **[Technical Implementation](docs/DYNATRACE_LOGS_SOLUTION.md)** - Environment setup, troubleshooting, and architecture details  
+- **[AI Integration Examples](docs/cursor-mcp-demo.md)** - Step-by-step AI analysis workflows
+
+---
+
+**🎉 Ready to get started?** Check out the [Tools Guide](docs/TOOLS_GUIDE.md) for comprehensive usage examples and best practices!
